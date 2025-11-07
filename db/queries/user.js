@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
-import db from "../client";
+import db from "#db/client";
 
 export async function createUser(username, password) {
   const sql = `
-    INSERT INTO user (username, password)
+    INSERT INTO users (username, password)
     VALUES ($1, $2)
     RETURNING *;
     `;
