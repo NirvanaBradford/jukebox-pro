@@ -15,12 +15,12 @@ import getUserFromToken from "#middleware/getUserFromToken";
 
 router.use(getUserFromToken);
 
-router.get("/", requireBody(["username", "password"]), async (req, res) => {
-  if (!req.users) {
+router.get("/", requireUser, async (req, res) => {
+  if (!req.user) {
     return res.status(401).json({ error: "user must be logged in" });
   }
-  const playlists = await getPlaylists(req.users.id);
-  res.status(201).json(playlists);
+  const playlists = await getPlaylists(req.user.id);
+  res.status(200).json(playlists);
 });
 
 router.post("/", requireUser, async (req, res) => {
