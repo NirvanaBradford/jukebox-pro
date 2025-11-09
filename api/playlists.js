@@ -9,21 +9,37 @@ import {
 } from "#db/queries/playlists";
 import { createPlaylistTrack } from "#db/queries/playlists_tracks";
 import { getTracksByPlaylistId } from "#db/queries/tracks";
+import requireBody from "#middleware/requireBody";
+import requireUser from "../middleware/requireUser";
+import getUserFromToken from "#middleware/getUserFromToken";
 
-router.get("/", async (req, res) => {
-  const playlists = await getPlaylists();
-  res.send(playlists);
+router.use(getUserFromToken);
+
+router.get("/", requireBody(["username", "password"]), async (req, res) => {
+  if (!req.users) {
+    return res.status(401).json({ error: "user must be logged in" });
+  }
+  const playlists = await getPlaylists(req.users.id);
+  res.status(201).json(playlists);
 });
 
-router.post("/", async (req, res) => {
-  if (!req.body) return res.status(400).send("Request body is required.");
+router.post("/", requireUser, async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Request body is required." });
+    }
 
-  const { name, description } = req.body;
-  if (!name || !description)
-    return res.status(400).send("Request body requires: name, description");
+    const { name, description } = req.body || {};
+    if (!name || !description) {
+      return res.status(400).send("Request body requires: name, description");
+    }
 
-  const playlist = await createPlaylist(name, description);
-  res.status(201).send(playlist);
+    const playlist = await createPlaylist(name, description, req.user.id);
+    res.status(201).json(playlist);
+  } catch (error) {
+    console.error("Error creating playlist", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.param("id", async (req, res, next, id) => {
