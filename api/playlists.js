@@ -50,8 +50,22 @@ router.param("id", async (req, res, next, id) => {
   next();
 });
 
-router.get("/:id", (req, res) => {
-  res.send(req.playlist);
+router.get("/:id", requireUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "user must be logged in" });
+  }
+
+  const playlist = await getPlaylistById(req.params.id);
+
+  if (!playlist) {
+    return res.status(400).json({ error: "Playlist not found" });
+  }
+
+  if (playlist.user_id !== req.user.id) {
+    return res.status(403).json({ error: "forbidden" });
+  }
+
+  res.status(200).json(playlist);
 });
 
 router.get("/:id/tracks", async (req, res) => {
